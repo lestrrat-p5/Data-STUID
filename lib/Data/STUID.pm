@@ -19,6 +19,8 @@ Data::STUID - Yet Another Unique ID Generator
 
 =head1 DESCRIPTION
 
-Minimalistic unique ID generator. Main logic ported from STF (http://github.com/stf-storage/stf)
+Minimalistic unique ID generator. Main logic ported from STF (http://github.com/stf-storage/stf).
+
+The generated IDs are always in 64bit range, and can be ordered sequentially, so it's easy to use for sort operations.
 
 =cut
