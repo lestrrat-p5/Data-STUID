@@ -30,12 +30,14 @@ sub pre_server_close_hook {
 sub process_request {
     my $self = shift;
 
-    my $id = $self->generator->create_id;
-    if (Data::STUID::DEBUG) {
-        $self->log(2, "Generated ID: $id");
+    while (read(STDIN, my $buf, 1) == 1) {
+        my $id = $self->generator->create_id;
+        if (Data::STUID::DEBUG) {
+            $self->log(2, "Generated ID: $id");
+        }
+        print STDOUT pack("Q", $id);
+        STDOUT->flush();
     }
-    print STDOUT pack("Q", $id);
-    STDOUT->flush();
 }
 
 1;
@@ -58,8 +60,44 @@ Data::STUID::Server - Simplistic STUID Server
 
 Data::STUID::Server is a very simplistic server that implements a unique
 ID generator. The ONLY thing this server can do is to generate a unique ID:
-Nothing else. Therefore, when you connect to this server, you don't even
-need to send a request. Data::STUID::Server will just give you a 64-bit
-ID that it generated, and close the connection. Done!
+Nothing else. 
+
+All you need to do is to send this server I<some> data. For each byte received,
+Data::STUID::Server will just give you a 64-bit ID.
+
+=head1 SETTING UP
+
+=over 4
+
+=item Install dependencies
+
+install carton >= 0.9.10, and cpanm >= 1.60002.
+
+    cd /path/to/Data-STUID
+    carton install
+    # optionally, skip tests: 'PERL_CPANM_OPT=-n carton install'
+
+=item Execute It!
+
+    carton exec -I/path/to/Data-STUID/lib -- \
+        /path/to/Data-STUID/script/stuid-server \
+        --host_id=1
+
+It might be easier if you wrap the above in a shell script, say server.sh:
+
+    #!/bin/sh
+    STUID_HOME=/path/to/Data-STUID
+    exec \
+        carton exec -I$STUID_HOME/lib -- \
+        $STUID_HOME/script/stuid-server $@
+
+Then execute it as:
+
+    ./server.sh --host_id=1
+
+Note that you need pass a unique C<host_id> parameter to each distinct STUID
+server instance
+
+=back
 
 =cut

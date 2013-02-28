@@ -15,6 +15,7 @@ sub new {
     $args{select_timeout}  ||= 0.1;
     $args{fetch_timeout}   ||= 0.5;
     $args{failure_delay}   ||= 300;
+    $args{max_reuse_count} ||= 300;
     bless { %args, _connect_failures => {} }, $class;
 }
 
@@ -31,6 +32,8 @@ TRY_READ:
             last;
         }
 
+        print $sock "\0";
+
         my $fileno = fileno($sock);
         my $rin = '';
         my $rout;
@@ -46,6 +49,7 @@ TRY_READ:
                 if (Data::STUID::DEBUG) {
                     print STDERR "Nothing to read\n";
                 }
+                $self->close_socket($sock);
                 last;
             }
 
@@ -76,7 +80,6 @@ TRY_READ:
                 }
 
                 if ($read_offset == 8) {
-                    $self->close_socket($sock);
                     my ($id) = unpack("Q", $buf);
                     return $id;
                 }
@@ -89,13 +92,20 @@ TRY_READ:
 sub get_socket {    
     my $self = shift;
 
+    if ($self->active_socket) {
+        $self->reuse_count($self->reuse_count + 1);
+        if ($self->reuse_count < $self->max_reuse_count) {
+            return $self->active_socket;
+        }
+    }
+
     my @servers = List::Util::shuffle(@{$self->servers});
     my $failures = $self->{_connect_failures};
     foreach my $server (@servers) {
         my $expires;
         if (defined($expires = $failures->{$server})) {
             if (Data::STUID::DEBUG) {
-                print STDERR "Previous failure for $server found. Will expire in $expires\n";
+                print STDERR "Previous failure for $server found. Will expire in @{[$expires - time() ]}\n";
             }
             if ($expires > time()) {
                 if (Data::STUID::DEBUG) {
@@ -113,6 +123,8 @@ sub get_socket {
             if (Data::STUID::DEBUG) {
                 print STDERR "Connected to $server\n";
             }
+            $self->active_socket($socket);
+            $self->reuse_count(0);
             return $socket;
         }
     }
@@ -129,7 +141,8 @@ sub create_socket {
         PeerPort    => $port,
         Proto       => "tcp",
         Type        => SOCK_STREAM,
-#        ReuseAddr   => 1,
+        ReuseAddr   => 1,
+        ReusePort   => 1,
         Blocking    => 0,
         Timeout     => $self->connect_timeout
     );
