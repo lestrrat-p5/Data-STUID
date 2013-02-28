@@ -28,3 +28,15 @@ if (! $p->getoptions(\%opts, @optspec)) {
 
 my $server = Data::STUID::Server->new(%opts);
 $server->run;
+
+__END__
+
+=head1 NAME
+
+stuid-server - STUID ID Generator Server
+
+=head1 SYNOPSIS
+
+    stuid-server --host_id=unique_number
+
+=cut

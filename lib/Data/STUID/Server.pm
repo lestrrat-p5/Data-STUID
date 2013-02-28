@@ -65,39 +65,4 @@ Nothing else.
 All you need to do is to send this server I<some> data. For each byte received,
 Data::STUID::Server will just give you a 64-bit ID.
 
-=head1 SETTING UP
-
-=over 4
-
-=item Install dependencies
-
-install carton >= 0.9.10, and cpanm >= 1.60002.
-
-    cd /path/to/Data-STUID
-    carton install
-    # optionally, skip tests: 'PERL_CPANM_OPT=-n carton install'
-
-=item Execute It!
-
-    carton exec -I/path/to/Data-STUID/lib -- \
-        /path/to/Data-STUID/script/stuid-server \
-        --host_id=1
-
-It might be easier if you wrap the above in a shell script, say server.sh:
-
-    #!/bin/sh
-    STUID_HOME=/path/to/Data-STUID
-    exec \
-        carton exec -I$STUID_HOME/lib -- \
-        $STUID_HOME/script/stuid-server $@
-
-Then execute it as:
-
-    ./server.sh --host_id=1
-
-Note that you need pass a unique C<host_id> parameter to each distinct STUID
-server instance
-
-=back
-
 =cut
